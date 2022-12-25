@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Notatnyk</title>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="vendor/localforage.min.js"></script>
+    <script src="index.js"></script>
+  </head>
+
+  <body x-data="app">
+    <main x-data="{ view: 'pages', currentPage: {} }">      
+      <template x-if="view === 'pages'">
+        <section x-data="{ creating: false }">
+          <h1>Pages</h1>
+
+          <button @click="save">Save data</button>
+
+          <button @click="creating = true; currentPage = {};">Create a page</button>
+
+          <ul x-show="!creating">
+            <template x-for="(page, pgIdx) in $store.pages" :key="page.id">
+              <li>    
+                <span x-text="page.name"></span>          
+                <button @click="view = 'page'; currentPage = page;">View</button>
+                <button @click="creating = true; currentPage = page">Edit</button>
+                <button @click="$store.pages.splice(pgIdx, 1)">Delete</button>
+              </li>
+            </template>
+          </ul>
+
+          <div x-show="creating" 
+            x-data="{ newPage: {} }" 
+            x-effect="newPage = currentPage; if (!newPage.id) { newPage.fields = []; newPage.notes = []; }"
+          >
+            <h2>Define new page and its note fields</h2>
+
+            <label>Page name
+              <input type="text" x-model="newPage.name">
+            </label>     
+
+            <h3>Page fields</h3>   
+
+            <ul>
+              <template x-for="(field, fldIdx) in newPage.fields" x-effect="newPage.fields">
+                <li>
+                  <span x-text="field"></span>                  
+                  <button @click="newPage.fields.splice(fldIdx, 1)">Delete</button>
+                </li>
+              </template>
+            </ul>
+
+            <div x-data="{ newPageField: '' }" x-effect="newPageField = ''">
+              <label>Field name
+                <input type="text" x-model="newPageField">
+              </label>
+              <button @click="newPage.fields.push(newPageField); newPageField = '';">Add field</button>
+            </div>
+
+            <div>
+              <button @click="creating = false">Cancel</button>
+              <button @click="if (!newPage.id) { newPage.id = $store.pages.length + 1; $store.pages.push(newPage); } creating = false;">Save</button>
+            </div>
+          </div>
+        </section>
+      </template>
+
+      <template x-if="currentPage && view === 'page'">
+        <section x-data="{ creating: false, currentNote: {} }">
+          <h1 x-text="`${currentPage.name} notes`"></h1>
+
+          <button @click="view = 'pages'; currentPage = {};">To the page list</button>
+
+          <button @click="creating = true; currentNote = {};">Create a note</button>
+
+          <ul x-show="!creating">
+            <template x-for="(note, noteIdx) in currentPage.notes" :key="note.id">
+              <li>
+                <p>
+                  <div>
+                    <span x-text="note.name"></span>
+                    <button @click="creating = true; currentNote = note;">Edit</button>
+                    <button @click="currentPage.notes.splice(noteIdx, 1)">Delete</button>
+                  </div>
+                  <template x-for="[key, value] in Object.entries(note)">
+                    <div x-text="`${key}: ${value}`" x-show="!['id', 'name'].includes(key)">
+                  </template>
+                </p>
+              </li>
+            </template>
+          </ul>
+
+          <div x-show="creating" x-data="{ newNote: {} }" x-effect="newNote = currentNote">
+            <h2>Fill note data</h2>
+
+            <label>Note name
+              <input type="text" x-model="newNote.name">
+            </label>     
+
+            <h3>Note fields</h3>   
+
+            <ul>
+              <template x-for="field in currentPage.fields">
+                <li x-effect="newNote[field] = newNote[field] || ''">
+                  <label>
+                    <span x-text="field"></span>
+                    <input type="text" x-model="newNote[field]">
+                  </label>
+                </li>
+              </template>
+            </ul>
+
+            <div>
+              <button @click="creating = false">Cancel</button>
+              <button @click="if (!newNote.id) { newNote.id = currentPage.notes.length + 1; currentPage.notes.push(newNote) }; creating = false;">Save</button>
+            </div>
+          </div>        
+        </section>
+      </template>
+    </main>
+  </body>
+</html>
