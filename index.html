@@ -16,105 +16,200 @@
 
           <button @click="save">Save data</button>
 
-          <button @click="creating = true; currentPage = {};">Create a page</button>
+          <button @click="creating = true; currentPage = {};">
+            Create a page
+          </button>
 
-          <ul x-show="!creating">
-            <template x-for="(page, pgIdx) in $store.pages" :key="page.id">
-              <li>    
-                <span x-text="page.name"></span>          
-                <button @click="view = 'page'; currentPage = page;">View</button>
-                <button @click="creating = true; currentPage = page">Edit</button>
-                <button @click="$store.pages.splice(pgIdx, 1)">Delete</button>
-              </li>
-            </template>
-          </ul>
-
-          <div x-show="creating" 
-            x-data="{ newPage: {} }" 
-            x-effect="newPage = currentPage; if (!newPage.id) { newPage.fields = []; newPage.notes = []; }"
-          >
-            <h2>Define new page and its note fields</h2>
-
-            <label>Page name
-              <input type="text" x-model="newPage.name">
-            </label>     
-
-            <h3>Page fields</h3>   
-
+          <template x-if="!creating">
             <ul>
-              <template x-for="(field, fldIdx) in newPage.fields" x-effect="newPage.fields">
-                <li>
-                  <span x-text="field"></span>                  
-                  <button @click="newPage.fields.splice(fldIdx, 1)">Delete</button>
+              <template x-for="[pgIdx, page] in Object.entries($store.pages)" 
+                :key="page.id"
+              >
+                <li>    
+                  <span x-text="page.name"></span>          
+                  <button @click="view = 'page'; currentPage = page;">
+                    View
+                  </button>
+                  <button @click="creating = true; currentPage = page">
+                    Edit
+                  </button>
+                  <button @click="delete $store.pages[pgIdx]">
+                    Delete
+                  </button>
                 </li>
               </template>
             </ul>
+          </template>
 
-            <div x-data="{ newPageField: '' }" x-effect="newPageField = ''">
-              <label>Field name
-                <input type="text" x-model="newPageField">
-              </label>
-              <button @click="newPage.fields.push(newPageField); newPageField = '';">Add field</button>
-            </div>
+          <template x-if="creating">
+            <div x-data="{ newPage: currentPage }" 
+              x-init="if (!newPage.id) { newPage.fields = []; newPage.notes = {}; }"
+            >
+              <h2>Define new page and its note fields</h2>
 
-            <div>
-              <button @click="creating = false">Cancel</button>
-              <button @click="if (!newPage.id) { newPage.id = $store.pages.length + 1; $store.pages.push(newPage); } creating = false;">Save</button>
+              <label>Page name
+                <input type="text" x-model="newPage.name">
+              </label>     
+
+              <h3>Page note fields</h3>   
+
+              <ul>
+                <template x-for="(field, fldIdx) in newPage.fields">
+                  <li>
+                    <span x-text="field"></span>                  
+                    <button @click="newPage.fields.splice(fldIdx, 1)">
+                      Delete
+                    </button>
+                  </li>
+                </template>
+              </ul>
+
+              <div x-data="{ newPageField: '' }">
+                <label>Field name
+                  <input type="text" x-model="newPageField">
+                </label>
+                <button 
+                  @click="newPage.fields.push(newPageField); newPageField = '';"
+                >
+                  Add field
+                </button>
+              </div>
+
+              <div x-data="{ newPageId: newPage.id || nextId($store.pages) }">
+                <button @click="creating = false">Cancel</button>
+                <button @click="newPage.id = newPageId; $store.pages[newPageId] = newPage; creating = false;">
+                  Save
+                </button>
+              </div>
             </div>
-          </div>
+          </template>
         </section>
       </template>
 
       <template x-if="currentPage && view === 'page'">
         <section x-data="{ creating: false, currentNote: {} }">
-          <h1 x-text="`${currentPage.name} notes`"></h1>
+          <div x-show="!creating">
+            <h1 x-text="`${currentPage.name} notes`"></h1>
 
-          <button @click="view = 'pages'; currentPage = {};">To the page list</button>
+            <button @click="view = 'pages'; currentPage = {};">
+              To the page list
+            </button>
+            <button @click="creating = true; currentNote = {};">
+              Create a note
+            </button>
+          </div>
 
-          <button @click="creating = true; currentNote = {};">Create a note</button>
-
-          <ul x-show="!creating">
-            <template x-for="(note, noteIdx) in currentPage.notes" :key="note.id">
-              <li>
-                <p>
-                  <div>
-                    <span x-text="note.name"></span>
-                    <button @click="creating = true; currentNote = note;">Edit</button>
-                    <button @click="currentPage.notes.splice(noteIdx, 1)">Delete</button>
-                  </div>
-                  <template x-for="[key, value] in Object.entries(note)">
-                    <div x-text="`${key}: ${value}`" x-show="!['id', 'name'].includes(key)">
-                  </template>
-                </p>
-              </li>
-            </template>
-          </ul>
-
-          <div x-show="creating" x-data="{ newNote: {} }" x-effect="newNote = currentNote">
-            <h2>Fill note data</h2>
-
-            <label>Note name
-              <input type="text" x-model="newNote.name">
-            </label>     
-
-            <h3>Note fields</h3>   
-
+          <template x-if="!creating">
             <ul>
-              <template x-for="field in currentPage.fields">
-                <li x-effect="newNote[field] = newNote[field] || ''">
-                  <label>
-                    <span x-text="field"></span>
-                    <input type="text" x-model="newNote[field]">
-                  </label>
+              <template x-for="[noteIdx, note] in Object.entries(currentPage.notes)" 
+                :key="note.id"
+              >
+                <li>
+                  <p>
+                    <div>
+                      <span x-text="note.name"></span>
+                      <button @click="creating = true; currentNote = note;">
+                        Edit
+                      </button>
+                      <button @click="delete currentPage.notes[noteIdx]">
+                        Delete
+                      </button>
+                    </div>
+                    <template x-for="[key, value] in Object.entries(note)">
+                      <div x-text="`${key}: ${value}`" 
+                        x-show="!['id', 'name', 'refs'].includes(key)"
+                      >
+                    </template>
+                    <div x-show="Object.values(note.refs).length">
+                      References
+                    </div>
+                    <ul>
+                      <template x-for="ref in Object.values(note.refs)">
+                        <li x-text="$store.pages[ref.pageId].notes[ref.noteId].name"></li>
+                      </template>
+                    </ul> 
+                  </p>
                 </li>
               </template>
             </ul>
+          </template>
 
-            <div>
-              <button @click="creating = false">Cancel</button>
-              <button @click="if (!newNote.id) { newNote.id = currentPage.notes.length + 1; currentPage.notes.push(newNote) }; creating = false;">Save</button>
-            </div>
-          </div>        
+          <template x-if="creating">
+            <div x-data="{ newNote: currentNote }">
+              <h2>Fill note data</h2>
+
+              <label>Note name
+                <input type="text" x-model="newNote.name">
+              </label>     
+
+              <h3>Note fields</h3>   
+
+              <ul>
+                <template x-for="field in currentPage.fields">
+                  <li x-init="newNote[field] = newNote[field] || ''">
+                    <label>
+                      <span x-text="field"></span>
+                      <input type="text" x-model="newNote[field]">
+                    </label>
+                  </li>
+                </template>
+              </ul>    
+
+              <div x-init="if (!newNote.refs) newNote.refs = {}">
+                <h3>References</h3>   
+
+                <ul>
+                  <template x-for="[refIdx, ref] in Object.entries(newNote.refs)">
+                    <li x-data="{ refTarget: $store.pages[ref.pageId].notes[ref.noteId] }">
+                      <span x-text="ref.name"></span>                  
+                      <span x-text="refTarget.name"></span>                  
+                      <button @click="delete newNote.refs[refIdx]">
+                        Delete
+                      </button>
+                    </li>
+                  </template>
+                </ul>
+
+                <div x-data="{ newRef: { id: nextId(newNote.refs) } }">
+                  <label>
+                    Page
+                    <select x-model.number="newRef.pageId">
+                      <option value="">select</option>
+                      <template 
+                        x-for="[pgIdx, page] in Object.entries($store.pages)"
+                        :key="page.id"
+                      >
+                        <option :value="page.id" x-text="page.name"></option>
+                      </template>
+                    </select>
+                  </label>
+
+                  <label x-data="{ notes: {} }" x-init="$watch('newRef.pageId', pageId => notes = pageId ? $store.pages[pageId].notes : {})">
+                    Note
+                    <select x-model.number="newRef.noteId">
+                      <option value="">select</option>
+                      <template 
+                        x-for="[noteIdx, note] in Object.entries(notes)"
+                        :key="note.id"
+                      >
+                        <option :value="note.id" x-text="note.name"></option>
+                      </template>
+                    </select>
+                  </label>
+                  <button @click="newNote.refs[newRef.id] = newRef; newRef = { id: nextId(newNote.refs) };">
+                    Add reference
+                  </button>
+                </div>
+              </div>
+
+              <div x-data="{ newNoteId: newNote.id || nextId(currentPage.notes) }">
+                <button @click="creating = false">Cancel</button>
+                <button @click="newNote.id = newNoteId; currentPage.notes[newNoteId] = newNote; creating = false;">
+                  Save
+                </button>
+              </div>
+            </div>     
+          </template>   
         </section>
       </template>
     </main>

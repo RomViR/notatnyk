@@ -2,7 +2,7 @@
 	const data = await localforage.getItem('notatnyk');
 
     document.addEventListener('alpine:init', () => {        
-    	Alpine.store('pages', data?.pages || []);
+    	Alpine.store('pages', data?.pages || {});
 
 		Alpine.data('app', () => ({
 			save() {
@@ -11,6 +11,15 @@
 					pages: data
 				})
 					.then(() => alert('Saved'));
+			},
+			nextId(obj) {
+				const keys = Object.keys(obj);
+
+				if (!keys.length) {
+					return 1;
+				}
+
+				return +keys.reduce((a, b) => obj[a] > obj[b] ? a : b) + 1;
 			}
 		}));
     });
